@@ -14,7 +14,7 @@ tags: []
 　　进入synchronized区域（字节码由monitorenter和monitorexit表示）的线程会争夺锁资源。   
 ![线程抢占锁原理图](/assets/img/synchronized.png "线程抢占锁原理图")   
 　　JVM使用\_cxq、\_entryList（\_entrySet）、\_waitSet队列来实现线程状态的转换、资源抢占，最终达到同步的目的。   
-　　线程Thread-x首先通过spin（自旋），利用CAS尝试获取锁，这里可以看出，锁竞争是“”非公平“的，因为先到达的线程有可能在\_cxq排队，而后到达的Thread-x线程已经开始参与锁竞争，如果得到锁，Thread-x将获取执行代码的权利，如果失败，Thread-x将通过CAS把自己放入\_cxq队列，并将线程状态更新为阻塞(park)，\_cxq是一个LIFO（后进先出）的队列，指针永远指向head。\_entryList也是一个线程等待队列，当\_owner(持有当前锁的线程)释放锁时，如果发现\_cxq != null && \_entryList == null，那么，\_owner将\_cxq中的线程节点移动到\_entryList，同时\_owner会唤醒（unpark）它的下一个线程节点参与锁竞争，这里是参与，不是把锁直接给下一个线程节点。   
+　　线程Thread-x首先通过spin（自旋），利用CAS尝试获取锁，这里可以看出，锁竞争是“非公平”的，因为先到达的线程有可能在\_cxq排队，而后到达的Thread-x线程已经开始参与锁竞争，如果得到锁，Thread-x将获取执行代码的权利，如果失败，Thread-x将通过CAS把自己放入\_cxq队列，并将线程状态更新为阻塞(park)，\_cxq是一个LIFO（后进先出）的队列，指针永远指向head。\_entryList也是一个线程等待队列，当\_owner(持有当前锁的线程)释放锁时，如果发现\_cxq != null && \_entryList == null，那么，\_owner将\_cxq中的线程节点移动到\_entryList，同时\_owner会唤醒（unpark）它的下一个线程节点参与锁竞争，这里是参与，不是把锁直接给下一个线程节点。   
 　　那些调用wait方法被阻塞的线程被放置到\_waitSet队列。   
 　　JVM底层实现synchronized是一个复杂的过程，远不像我说的这样简单，锁资源的体现在objectMonitor.cpp中，附录有源码。   
 
